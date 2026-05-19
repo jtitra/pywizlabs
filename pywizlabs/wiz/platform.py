@@ -103,7 +103,7 @@ def verify_wiz_login(dc: str, access_token: str, user_email: str) -> bool:
     # GraphQL query to search for the user and retrieve their last login timestamp
     query = """
     query GetUserLoginStatus($search: String, $first: Int) {
-      users(search: $search, first: $first) {
+      users(filterBy: { search: $search }, first: $first) {
         nodes {
           email
           lastLoginAt
@@ -173,7 +173,7 @@ def delete_wiz_user(dc: str, access_token: str, user_email: str) -> bool:
     # STEP 1: Find the user's ID by their email
     query_user = """
     query GetUserForDeletion($search: String, $first: Int) {
-      users(search: $search, first: $first) {
+      users(filterBy: { search: $search }, first: $first) {
         nodes {
           id
           email
@@ -269,7 +269,7 @@ def get_user_creations(dc: str, access_token: str, user_email: str, hours_ago: i
     # Note: We filter by the user's email and search for "CREATE" actions
     query_audit_logs = """
     query GetUserAuditLogs($search: String, $first: Int) {
-      auditLogEntries(search: $search, first: $first) {
+      auditLogEntries(filterBy: { search: $search }, first: $first) {
         nodes {
           id
           action
