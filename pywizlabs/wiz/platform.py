@@ -206,13 +206,13 @@ def delete_wiz_user(dc: str, access_token: str, user_email: str) -> bool:
             
         print(f"Found user '{user_email}' with ID '{user_id}'. Proceeding with deletion...")
         
-        # STEP 2: Delete the user using the ID we just fetched
+        # STEP 2: Delete the user using the ID we just fetched.
+        # DeleteUserPayload's only selectable field is `_stub` — the API doesn't
+        # echo the deleted user back, so we just select the placeholder.
         mutation_delete = """
         mutation DeleteLabUser($id: ID!) {
           deleteUser(input: { id: $id }) {
-            user {
-              id
-            }
+            _stub
           }
         }
         """
@@ -243,58 +243,65 @@ def delete_wiz_user(dc: str, access_token: str, user_email: str) -> bool:
 
 def get_user_creations(dc: str, access_token: str, user_email: str, hours_ago: int = 24) -> list:
     """
-    Queries the Wiz Audit Logs to find all objects created by a specific user within a timeframe.
-    
+    Queries the Wiz Audit Logs for successful CREATE actions performed by the given
+    user within a timeframe. Wiz's ``AuditLogEntry`` has no structured ``resource``
+    field — the resource identifiers live inside ``actionParameters`` as a JSON blob
+    whose shape varies per action. This function returns the raw audit entries so
+    callers can either persist them for manual review or parse ``actionParameters``
+    per action type.
+
     Args:
         dc (str): The Wiz datacenter identifier (e.g., "us100", "us17", "eu1").
         access_token (str): A valid Wiz API Bearer token with 'admin:audit' permissions.
-        user_email (str): The email address of the lab user.
+        user_email (str): The email address of the lab user (also stored as ``performer.name``).
         hours_ago (int): The lookback period in hours to search for creation events.
-        
+
     Returns:
-        list: A list of dictionaries containing the created resource details.
+        list: A list of audit entry dicts, each containing ``id``, ``action``,
+        ``actionType``, ``status``, ``timestamp``, ``performer`` ({id, name}), and
+        ``actionParameters`` (JSON).
     """
-    
+
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
     }
-    
+
     api_endpoint_url = build_wiz_api_url(dc)
-    
+
     # Calculate the timestamp for the filter
     time_threshold = (datetime.now(timezone.utc) - timedelta(hours=hours_ago)).isoformat()
-    
-    # GraphQL query to fetch Audit Logs
-    # Note: We filter by the user's email and search for "CREATE" actions
+
+    # GraphQL query to fetch Audit Logs.
+    # Note: ``performer`` is a SystemPrincipalSnapshot interface; only ``id`` and
+    # ``name`` are common to all implementations. Wiz typically stores the user's
+    # email as ``name``, so we match on that for the defensive per-user filter.
     query_audit_logs = """
     query GetUserAuditLogs($search: String, $first: Int) {
       auditLogEntries(filterBy: { search: $search }, first: $first) {
         nodes {
           id
           action
+          actionType
           status
           timestamp
-          user {
-            email
-          }
-          resource {
+          performer {
             id
             name
-            type
           }
+          actionParameters
         }
       }
     }
     """
-    
+
     variables = {
         "search": user_email,
         "first": 500
     }
-    
+
     created_resources = []
-    
+
     try:
         response = requests.post(
             api_endpoint_url,
@@ -302,30 +309,29 @@ def get_user_creations(dc: str, access_token: str, user_email: str, hours_ago: i
             headers=headers
         )
         response.raise_for_status()
-        
+
         logs = response.json().get("data", {}).get("auditLogEntries", {}).get("nodes", [])
-        
+
         for log in logs:
-            # Filter for successful creation events by the specific user after our time threshold
-            log_user_email = log.get("user", {}).get("email", "").lower()
+            # Filter for successful creation events by the specific user after our time threshold.
+            performer_name = log.get("performer", {}).get("name", "").lower()
             action = log.get("action", "").upper()
             status = log.get("status", "").upper()
             timestamp = log.get("timestamp", "")
-            
-            if (log_user_email == user_email.lower() and 
-                "CREATE" in action and 
-                status == "SUCCESS" and 
+
+            if (performer_name == user_email.lower() and
+                "CREATE" in action and
+                status == "SUCCESS" and
                 timestamp >= time_threshold):
-                
-                resource_info = log.get("resource", {})
-                print(f"[{timestamp}] User created {resource_info.get('type')}: {resource_info.get('name')} (ID: {resource_info.get('id')})")
-                created_resources.append(resource_info)
-                
+
+                print(f"[{timestamp}] {user_email} performed {log.get('action')} (entry {log.get('id')})")
+                created_resources.append(log)
+
         if not created_resources:
-            print(f"No created resources found for user '{user_email}' in the last {hours_ago} hours.")
-            
+            print(f"No CREATE audit entries found for user '{user_email}' in the last {hours_ago} hours.")
+
         return created_resources
-        
+
     except requests.exceptions.RequestException as e:
         print(f"Failed to fetch audit logs from the Wiz API: {e}")
         if hasattr(e, 'response') and e.response is not None:
@@ -412,14 +418,15 @@ def process_deletions(dc: str, access_token: str, resources: list) -> list:
     for resource in resources:
         res_type = resource.get("type")
         res_id = resource.get("id")
-        res_name = resource.get("name")
-        
-        # Look up the deletion function in our dictionary
-        handler = DELETION_HANDLERS.get(res_type)
-        
+        res_name = resource.get("name") or resource.get("action")
+
+        # Audit entries from get_user_creations lack a structured 'type' — the
+        # resource identifiers are inside actionParameters as JSON whose shape
+        # varies per action. They fall through to manual cleanup below.
+        handler = DELETION_HANDLERS.get(res_type) if res_type else None
+
         if handler:
             try:
-                # Execute the specific deletion function
                 success = handler(api_endpoint_url, access_token, res_id)
                 if not success:
                     print(f"Failed to delete {res_type} '{res_name}' ({res_id}). Tagging for manual cleanup.")
@@ -428,8 +435,8 @@ def process_deletions(dc: str, access_token: str, resources: list) -> list:
                 print(f"Error deleting {res_type} '{res_name}' ({res_id}): {e}")
                 manual_cleanup_required.append(resource)
         else:
-            # No function exists for this resource type yet
-            print(f"No deletion function mapped for type '{res_type}' ('{res_name}'). Tagging for manual cleanup.")
+            label = res_type or f"audit-entry/{resource.get('action', 'unknown')}"
+            print(f"No handler for '{label}' ('{res_name}'). Tagging for manual cleanup.")
             manual_cleanup_required.append(resource)
 
     return manual_cleanup_required

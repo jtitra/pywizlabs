@@ -160,5 +160,8 @@ tags.lock
 *.log
 *.error
 
+# Local schema-introspection scratchpad (Wiz GraphQL debugging)
+.wiz-schema/
+
 # Docker
 Dockerfile
