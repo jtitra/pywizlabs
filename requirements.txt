@@ -1,0 +1,5 @@
+requests
+jinja2
+kubernetes
+pyyaml
+google-cloud-storage
