@@ -10,7 +10,9 @@ Welcome to pywizlabs's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
+   wiz
+   keycloak
+   utils
 
 Indices and tables
 ==================
@@ -18,5 +20,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-.. include:: modules.rst
