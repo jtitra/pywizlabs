@@ -130,11 +130,18 @@ def verify_wiz_login(dc: str, access_token: str, user_email: str) -> bool:
             headers=headers
         )
         response.raise_for_status()
-        
+
         response_json = response.json()
-        
-        # Safely extract the list of users from the GraphQL response
-        users = response_json.get("data", {}).get("users", {}).get("nodes", [])
+        if response_json.get("errors"):
+            print(f"GraphQL errors from users query: {response_json['errors']}")
+            return False
+
+        # Safely extract the list of users from the GraphQL response.
+        # Use ``or {}`` because a GraphQL error response has ``data: null``,
+        # which would make a chained .get() crash with AttributeError.
+        data = response_json.get("data") or {}
+        users_block = data.get("users") or {}
+        users = users_block.get("nodes", [])
         
         for user in users:
             # Ensure we are checking the exact user, as search might return similar emails
@@ -190,8 +197,15 @@ def delete_wiz_user(dc: str, access_token: str, user_email: str) -> bool:
             headers=headers
         )
         response.raise_for_status()
-        
-        users = response.json().get("data", {}).get("users", {}).get("nodes", [])
+
+        response_json = response.json()
+        if response_json.get("errors"):
+            print(f"GraphQL errors from users-for-deletion query: {response_json['errors']}")
+            return False
+
+        data = response_json.get("data") or {}
+        users_block = data.get("users") or {}
+        users = users_block.get("nodes", [])
         user_id = None
         
         # Look for the exact email match
@@ -310,7 +324,14 @@ def get_user_creations(dc: str, access_token: str, user_email: str, hours_ago: i
         )
         response.raise_for_status()
 
-        logs = response.json().get("data", {}).get("auditLogEntries", {}).get("nodes", [])
+        response_json = response.json()
+        if response_json.get("errors"):
+            print(f"GraphQL errors from auditLogEntries query: {response_json['errors']}")
+            return []
+
+        data = response_json.get("data") or {}
+        entries_block = data.get("auditLogEntries") or {}
+        logs = entries_block.get("nodes", [])
 
         for log in logs:
             # Filter for successful creation events by the specific user after our time threshold.
