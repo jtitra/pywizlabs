@@ -1,0 +1,17 @@
+[tool.bumpversion]
+current_version = "0.3.0"
+commit = true
+tag = true
+
+[[tool.bumpversion.files]]
+filename = "setup.py"
+
+[[tool.bumpversion.files]]
+filename = "docs/source/conf.py"
+search = "release = '{current_version}'"
+replace = "release = '{new_version}'"
+
+[[tool.bumpversion.files]]
+filename = "pywizlabs/__init__.py"
+search = '__version__ = "{current_version}"'
+replace = '__version__ = "{new_version}"'
