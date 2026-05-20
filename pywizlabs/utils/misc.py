@@ -55,9 +55,9 @@ def setup_vs_code(service_port, code_server_directory):
 
     # Check if VS Code is already installed
     if subprocess.call(["which", "code-server"], stdout=subprocess.DEVNULL) == 0:
-        print("VS Code already installed.")
+        print("[VSCODE] VS Code already installed.")
     else:
-        print("Installing VS Code...")
+        print("[VSCODE] Installing VS Code...")
         download_and_install()
 
     # Setup VS Code
@@ -92,15 +92,15 @@ def install_vscode_extensions(extensions):
     for extension in extensions:
         try:
             subprocess.run(["code-server", "--install-extension", extension], check=True)
-            print(f"{extension} extension installed successfully")
+            print(f"[VSCODE] {extension} extension installed successfully")
         except subprocess.CalledProcessError as e:
-            print(f"Error installing {extension} extension: {e}")
+            print(f"[VSCODE] Error installing {extension} extension: {e}")
             success = False
         except FileNotFoundError:
-            print("code-server not found. Ensure code-server is installed and accessible")
+            print("[VSCODE] code-server not found. Ensure code-server is installed and accessible")
             success = False
         except Exception as e:
-            print(f"Unexpected error installing {extension}: {e}")
+            print(f"[VSCODE] Unexpected error installing {extension}: {e}")
             success = False
 
     return success
@@ -129,7 +129,7 @@ def generate_credentials_html(credentials):
         return rendered_html
     
     except requests.RequestException as e:
-        print(f"Error fetching the template: {e}")
+        print(f"[TEMPLATE] Error fetching the template: {e}")
         return None
 
 
@@ -158,9 +158,9 @@ def run_command(command):
     """
     try:
         subprocess.run(command, shell=True, check=True)
-        print(f"Command '{command}' executed successfully.")
+        print(f"[SHELL] Command '{command}' executed successfully.")
     except subprocess.CalledProcessError as e:
-        print(f"Failed to execute command '{command}'. Error: {e}")
+        print(f"[SHELL] Failed to execute command '{command}'. Error: {e}")
 
 
 def generate_random_suffix(length=10):
@@ -190,7 +190,7 @@ def generate_gke_credentials(generator_uri, user_name, output_file, role_name):
     :param output_file: The file to create for the new kubeconfig yaml.
     :param role_name: The existing K8s ClusterRole to assign to the new user.
     """
-    print("Getting GKE cluster credentials...")
+    print("[GKE] Getting GKE cluster credentials...")
     payload = json.dumps({"username": user_name, "rolename": role_name})
     response = requests.post(
         f"{generator_uri}/create-user",
@@ -200,7 +200,7 @@ def generate_gke_credentials(generator_uri, user_name, output_file, role_name):
     )
     with open(output_file, "wb") as f:
         f.write(response.content)
-    print(f"HTTP status code: {response.status_code}")
+    print(f"[GKE] HTTP status code: {response.status_code}")
 
 
 def revoke_gke_credentials(generator_uri, user_name):
@@ -210,7 +210,7 @@ def revoke_gke_credentials(generator_uri, user_name):
     :param generator_uri: The URL of the GKE Generator API server.
     :param user_name: The user to revoke an env/namespace for.
     """
-    print("Revoking GKE cluster credentials...")
+    print("[GKE] Revoking GKE cluster credentials...")
     payload = json.dumps({"username": user_name})
     response = requests.post(
         f"{generator_uri}/delete-user",
@@ -218,7 +218,7 @@ def revoke_gke_credentials(generator_uri, user_name):
         data=payload,
         stream=True
     )
-    print(f"HTTP status code: {response.status_code}")
+    print(f"[GKE] HTTP status code: {response.status_code}")
 
 
 def validate_yaml_content(yaml_content):
@@ -253,10 +253,10 @@ def render_template_from_url(context, template_path):
         rendered_content = template.render(context)
         return rendered_content
     except requests.RequestException as e:
-        print(f"Error fetching the template: {e}")
+        print(f"[TEMPLATE] Error fetching the template: {e}")
         return None
     except Exception as e:
-        print(f"Error rendering the template: {e}")
+        print(f"[TEMPLATE] Error rendering the template: {e}")
         return None
 
 
@@ -275,9 +275,9 @@ def fetch_template_from_url(template_path, output_file):
         with open(output_file, 'w') as file:
             file.write(template_content)
     except requests.RequestException as e:
-        print(f"Error fetching the template: {e}")
+        print(f"[TEMPLATE] Error fetching the template: {e}")
     except Exception as e:
-        print(f"Error rendering the template: {e}")
+        print(f"[TEMPLATE] Error rendering the template: {e}")
 
 
 def parse_pipeline(yaml_str):
@@ -671,6 +671,6 @@ def persist_to_gcs(manual_cleanup_list: list, user_email: str, lab_type: str, bu
             data=json.dumps(payload, indent=2),
             content_type="application/json"
         )
-        print(f"Successfully persisted manual cleanup list to GCS: gs://{bucket_name}/{filename}")
+        print(f"[GCS] Successfully persisted manual cleanup list to GCS: gs://{bucket_name}/{filename}")
     except Exception as e:
-        print(f"Failed to write manual cleanup list to GCS: {e}")
+        print(f"[GCS] Failed to write manual cleanup list to GCS: {e}")

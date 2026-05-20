@@ -59,10 +59,10 @@ def create_keycloak_user(keycloak_endpoint, keycloak_realm, keycloak_token, user
     response = requests.post(url, headers=headers, json=payload)
     response_code = response.status_code
 
-    print(f"HTTP status code: {response_code}")
+    print(f"[KEYCLOAK] HTTP status code: {response_code}")
 
     if response_code != 201:
-        print(f"The user creation API is not returning 201... this was the response: {response_code}")
+        print(f"[KEYCLOAK] The user creation API is not returning 201... this was the response: {response_code}")
         raise SystemExit(1)
 
 
@@ -85,7 +85,7 @@ def get_keycloak_user_id(keycloak_endpoint, keycloak_realm, keycloak_token, sear
     response_data = response.json()
     user_id = response_data[0].get("id") if response_data else None
 
-    print(f"Keycloak User ID: {user_id}")
+    print(f"[KEYCLOAK] Keycloak User ID: {user_id}")
     return user_id
 
 
@@ -128,7 +128,7 @@ def add_keycloak_user_to_group(keycloak_endpoint, keycloak_realm, keycloak_token
         timeout=10,
     )
     join_response.raise_for_status()
-    print(f"Added '{user_email}' to Keycloak group '{group_name}'")
+    print(f"[KEYCLOAK] Added '{user_email}' to Keycloak group '{group_name}'")
 
 
 def delete_keycloak_user(keycloak_endpoint, keycloak_realm, keycloak_token, user_email, cleanup=False):
@@ -143,9 +143,9 @@ def delete_keycloak_user(keycloak_endpoint, keycloak_realm, keycloak_token, user
     """
     user_id = get_keycloak_user_id(keycloak_endpoint, keycloak_realm, keycloak_token, user_email)
     if not user_id:
-        print("Failed to determine the User ID.")
+        print("[KEYCLOAK] Failed to determine the User ID.")
     else:
-        print(f"Deleting Keycloak User ID: {user_id}")
+        print(f"[KEYCLOAK] Deleting Keycloak User ID: {user_id}")
         url = f"{keycloak_endpoint}/admin/realms/{keycloak_realm}/users/{user_id}"
         headers = {
             "Authorization": f"Bearer {keycloak_token}"
@@ -154,11 +154,11 @@ def delete_keycloak_user(keycloak_endpoint, keycloak_realm, keycloak_token, user
         response = requests.delete(url, headers=headers)
         response_code = response.status_code
 
-        print(f"HTTP status code: {response_code}")
+        print(f"[KEYCLOAK] HTTP status code: {response_code}")
 
         if response_code != 204:
-            print(f"The user deletion API is not returning 204... this was the response: {response_code}")
+            print(f"[KEYCLOAK] The user deletion API is not returning 204... this was the response: {response_code}")
             if cleanup:
-                print("Attempting to continue the cleanup process...")
+                print("[KEYCLOAK] Attempting to continue the cleanup process...")
             else:
                 raise SystemExit(1)

@@ -56,7 +56,7 @@ def create_user(sn_instance, sn_username, sn_password, first_name, last_name, us
 
     data = response.json()
     sys_id = data["result"]["sys_id"]
-    print(f"User created with sys_id: {sys_id}")
+    print(f"[SNOW] User created with sys_id: {sys_id}")
     return sys_id
 
 
@@ -74,7 +74,7 @@ def delete_user(sn_instance, sn_username, sn_password, sys_id):
     url = f"{sn_base_url}/api/now/table/sys_user/{sys_id}"
     response = requests.delete(url, auth=(sn_username, sn_password))
     response.raise_for_status()
-    print(f"User with sys_id {sys_id} deleted.")
+    print(f"[SNOW] User with sys_id {sys_id} deleted.")
 
 
 def add_user_to_group(sn_instance, sn_username, sn_password, user_sys_id, group_name="Workshop Users"):
@@ -112,5 +112,5 @@ def add_user_to_group(sn_instance, sn_username, sn_password, user_sys_id, group_
     membership_response.raise_for_status()
 
     membership_sys_id = membership_response.json()["result"]["sys_id"]
-    print(f"User {user_sys_id} added to group '{group_name}' with membership sys_id: {membership_sys_id}")
+    print(f"[SNOW] User {user_sys_id} added to group '{group_name}' with membership sys_id: {membership_sys_id}")
     return membership_sys_id

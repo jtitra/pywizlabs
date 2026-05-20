@@ -78,10 +78,10 @@ def get_wiz_api_token(
         return token_data.get("access_token")
         
     except requests.exceptions.RequestException as e:
-        print(f"Failed to authenticate with Wiz API: {e}")
+        print(f"[WIZ] Failed to authenticate with Wiz API: {e}")
         # If the server returned an error response, print it for debugging
         if hasattr(e, 'response') and e.response is not None:
-            print(f"Server Response: {e.response.text}")
+            print(f"[WIZ] Server Response: {e.response.text}")
         return None
 
 
@@ -123,7 +123,7 @@ def verify_wiz_login(dc: str, access_token: str, user_email: str) -> bool:
     }
     
     try:
-        print(f"Validating Wiz login for user '{user_email}'...")
+        print(f"[WIZ] Validating Wiz login for user '{user_email}'...")
         response = requests.post(
             api_endpoint_url,
             json={"query": query, "variables": variables},
@@ -133,7 +133,7 @@ def verify_wiz_login(dc: str, access_token: str, user_email: str) -> bool:
 
         response_json = response.json()
         if response_json.get("errors"):
-            print(f"GraphQL errors from users query: {response_json['errors']}")
+            print(f"[WIZ] GraphQL errors from users query: {response_json['errors']}")
             return False
 
         # Safely extract the list of users from the GraphQL response.
@@ -150,11 +150,11 @@ def verify_wiz_login(dc: str, access_token: str, user_email: str) -> bool:
                 return user.get("lastLoginAt") is not None
                 
         # If the loop finishes without returning, the user wasn't found in the results
-        print(f"User '{user_email}' not found in the Wiz tenant.")
+        print(f"[WIZ] User '{user_email}' not found in the Wiz tenant.")
         return False
         
     except requests.exceptions.RequestException as e:
-        print(f"Failed to query Wiz API: {e}")
+        print(f"[WIZ] Failed to query Wiz API: {e}")
         return False
 
 
@@ -200,7 +200,7 @@ def delete_wiz_user(dc: str, access_token: str, user_email: str) -> bool:
 
         response_json = response.json()
         if response_json.get("errors"):
-            print(f"GraphQL errors from users-for-deletion query: {response_json['errors']}")
+            print(f"[WIZ] GraphQL errors from users-for-deletion query: {response_json['errors']}")
             return False
 
         data = response_json.get("data") or {}
@@ -215,10 +215,10 @@ def delete_wiz_user(dc: str, access_token: str, user_email: str) -> bool:
                 break
                 
         if not user_id:
-            print(f"User '{user_email}' not found. Nothing to delete.")
+            print(f"[WIZ] User '{user_email}' not found. Nothing to delete.")
             return False
             
-        print(f"Found user '{user_email}' with ID '{user_id}'. Proceeding with deletion...")
+        print(f"[WIZ] Found user '{user_email}' with ID '{user_id}'. Proceeding with deletion...")
         
         # STEP 2: Delete the user using the ID we just fetched.
         # DeleteUserPayload's only selectable field is `_stub` — the API doesn't
@@ -242,16 +242,16 @@ def delete_wiz_user(dc: str, access_token: str, user_email: str) -> bool:
         
         # Check for GraphQL errors in the response
         if "errors" in delete_data:
-            print(f"Failed to delete user due to GraphQL errors: {delete_data['errors']}")
+            print(f"[WIZ] Failed to delete user due to GraphQL errors: {delete_data['errors']}")
             return False
             
-        print(f"Successfully deleted user '{user_email}'.")
+        print(f"[WIZ] Successfully deleted user '{user_email}'.")
         return True
         
     except requests.exceptions.RequestException as e:
-        print(f"Failed to communicate with the Wiz API: {e}")
+        print(f"[WIZ] Failed to communicate with the Wiz API: {e}")
         if hasattr(e, 'response') and e.response is not None:
-            print(f"Server Response: {e.response.text}")
+            print(f"[WIZ] Server Response: {e.response.text}")
         return False
 
 
@@ -326,7 +326,7 @@ def get_user_creations(dc: str, access_token: str, user_email: str, hours_ago: i
 
         response_json = response.json()
         if response_json.get("errors"):
-            print(f"GraphQL errors from auditLogEntries query: {response_json['errors']}")
+            print(f"[WIZ] GraphQL errors from auditLogEntries query: {response_json['errors']}")
             return []
 
         data = response_json.get("data") or {}
@@ -345,18 +345,18 @@ def get_user_creations(dc: str, access_token: str, user_email: str, hours_ago: i
                 status == "SUCCESS" and
                 timestamp >= time_threshold):
 
-                print(f"[{timestamp}] {user_email} performed {log.get('action')} (entry {log.get('id')})")
+                print(f"[WIZ] [{timestamp}] {user_email} performed {log.get('action')} (entry {log.get('id')})")
                 created_resources.append(log)
 
         if not created_resources:
-            print(f"No CREATE audit entries found for user '{user_email}' in the last {hours_ago} hours.")
+            print(f"[WIZ] No CREATE audit entries found for user '{user_email}' in the last {hours_ago} hours.")
 
         return created_resources
 
     except requests.exceptions.RequestException as e:
-        print(f"Failed to fetch audit logs from the Wiz API: {e}")
+        print(f"[WIZ] Failed to fetch audit logs from the Wiz API: {e}")
         if hasattr(e, 'response') and e.response is not None:
-            print(f"Server Response: {e.response.text}")
+            print(f"[WIZ] Server Response: {e.response.text}")
         return []
 
 
@@ -390,7 +390,7 @@ def delete_connector(api_endpoint_url: str, access_token: str, resource_id: str)
     }
     """
     try:
-        print(f"Executing API call to delete Connector {resource_id}...")
+        print(f"[WIZ] Executing API call to delete Connector {resource_id}...")
         response = requests.post(
             api_endpoint_url,
             json={"query": mutation_delete, "variables": {"id": resource_id}},
@@ -400,12 +400,12 @@ def delete_connector(api_endpoint_url: str, access_token: str, resource_id: str)
         
         delete_data = response.json()
         if "errors" in delete_data:
-            print(f"Failed to delete Connector due to GraphQL errors: {delete_data['errors']}")
+            print(f"[WIZ] Failed to delete Connector due to GraphQL errors: {delete_data['errors']}")
             return False
             
         return True
     except requests.exceptions.RequestException as e:
-        print(f"API request failed for deleting Connector {resource_id}: {e}")
+        print(f"[WIZ] API request failed for deleting Connector {resource_id}: {e}")
         return False
 
 
@@ -450,14 +450,14 @@ def process_deletions(dc: str, access_token: str, resources: list) -> list:
             try:
                 success = handler(api_endpoint_url, access_token, res_id)
                 if not success:
-                    print(f"Failed to delete {res_type} '{res_name}' ({res_id}). Tagging for manual cleanup.")
+                    print(f"[WIZ] Failed to delete {res_type} '{res_name}' ({res_id}). Tagging for manual cleanup.")
                     manual_cleanup_required.append(resource)
             except Exception as e:
-                print(f"Error deleting {res_type} '{res_name}' ({res_id}): {e}")
+                print(f"[WIZ] Error deleting {res_type} '{res_name}' ({res_id}): {e}")
                 manual_cleanup_required.append(resource)
         else:
             label = res_type or f"audit-entry/{resource.get('action', 'unknown')}"
-            print(f"No handler for '{label}' ('{res_name}'). Tagging for manual cleanup.")
+            print(f"[WIZ] No handler for '{label}' ('{res_name}'). Tagging for manual cleanup.")
             manual_cleanup_required.append(resource)
 
     return manual_cleanup_required

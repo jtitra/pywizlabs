@@ -45,17 +45,17 @@ def generate_keycloak_token(keycloak_endpoint, keycloak_admin_user, keycloak_adm
     response = requests.post(url, headers=headers, data=payload)
 
     if response.status_code != 200:
-        print(f"Keycloak token API call failed (HTTP {response.status_code}): {response.text}")
+        print(f"[KEYCLOAK] Keycloak token API call failed (HTTP {response.status_code}): {response.text}")
         if cleanup:
             return None
         raise SystemExit(1)
 
     keycloak_token = response.json().get("access_token")
     if not keycloak_token:
-        print(f"Keycloak token response missing access_token: {response.json()}")
+        print(f"[KEYCLOAK] Keycloak token response missing access_token: {response.json()}")
         if cleanup:
             return None
         raise SystemExit(1)
 
-    print("Token generation complete")
+    print("[KEYCLOAK] Token generation complete")
     return keycloak_token

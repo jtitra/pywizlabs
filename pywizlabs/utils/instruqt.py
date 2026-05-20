@@ -34,7 +34,7 @@ def get_agent_variable(variable_name):
         variable_value = result.stdout.strip()
         return variable_value
     except subprocess.CalledProcessError as e:
-        print(f"Error retrieving {variable_name}: {e}")
+        print(f"[INSTRUQT] Error retrieving {variable_name}: {e}")
         return None
 
 
@@ -48,7 +48,7 @@ def set_agent_variable(variable_name, variable_value):
     try:
         subprocess.run(["agent", "variable", "set", variable_name, variable_value], check=True, stdout=subprocess.PIPE, text=True)
     except subprocess.CalledProcessError as e:
-        print(f"Error setting {variable_name}: {e}")
+        print(f"[INSTRUQT] Error setting {variable_name}: {e}")
 
 
 def raise_lab_failure_message(message_text):

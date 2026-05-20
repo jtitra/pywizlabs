@@ -37,17 +37,17 @@ def add_k8s_service_to_hosts(service_name, namespace, hostname):
     max_retries = 5
     retry_delay = 10  # seconds
 
-    print(f"Adding '{service_name}' to the hosts file.")
+    print(f"[K8S] Adding '{service_name}' to the hosts file.")
     while retries < max_retries:
         ip_address = subprocess.getoutput(f"kubectl get service {service_name} -n {namespace} -o=jsonpath='{{.status.loadBalancer.ingress[0].ip}}'")
         if ip_address and ip_address.lower() not in ["<none>", "none"]:
-            print(f"Successfully retrieved IP address: {ip_address}")
+            print(f"[K8S] Successfully retrieved IP address: {ip_address}")
             break
         retries += 1
         if retries == max_retries:
-            print(f"Failed to retrieve IP for service {service_name} in namespace {namespace} after {max_retries} attempts.")
+            print(f"[K8S] Failed to retrieve IP for service {service_name} in namespace {namespace} after {max_retries} attempts.")
             return 1
-        print(f"Retrying in {retry_delay} seconds... ({retries}/{max_retries})")
+        print(f"[K8S] Retrying in {retry_delay} seconds... ({retries}/{max_retries})")
         time.sleep(retry_delay)
 
     # Update /etc/hosts
@@ -59,7 +59,7 @@ def add_k8s_service_to_hosts(service_name, namespace, hostname):
                 file.write(line)
         file.write(f"{ip_address} {hostname}\n")
 
-    print(f"Added {hostname} with IP {ip_address} to /etc/hosts")
+    print(f"[K8S] Added {hostname} with IP {ip_address} to /etc/hosts")
 
 
 def get_k8s_loadbalancer_ip(service_name, namespace="default", max_attempts=15):
@@ -72,7 +72,7 @@ def get_k8s_loadbalancer_ip(service_name, namespace="default", max_attempts=15):
     :return: The external IP address of the LoadBalancer service.
     :raises SystemExit: If the IP address could not be retrieved within the maximum attempts.
     """
-    print(f"Waiting for LoadBalancer IP for service {service_name}...")
+    print(f"[K8S] Waiting for LoadBalancer IP for service {service_name}...")
     sleep_time = 5
     v1 = client.CoreV1Api()
     for attempt in range(1, max_attempts + 1):
@@ -80,14 +80,14 @@ def get_k8s_loadbalancer_ip(service_name, namespace="default", max_attempts=15):
             service = v1.read_namespaced_service(service_name, namespace)
             if service.status.load_balancer.ingress:
                 external_ip = service.status.load_balancer.ingress[0].ip
-                print(f"Attempt {attempt}/{max_attempts}:: Found IP {external_ip} for service {service_name}")
+                print(f"[K8S] Attempt {attempt}/{max_attempts}:: Found IP {external_ip} for service {service_name}")
                 return external_ip
             else:
-                print(f"Attempt {attempt}/{max_attempts}:: No ingress IP found for service {service_name}. Retrying in {sleep_time} seconds...")
+                print(f"[K8S] Attempt {attempt}/{max_attempts}:: No ingress IP found for service {service_name}. Retrying in {sleep_time} seconds...")
         except client.ApiException as e:
-            print(f"Attempt {attempt}/{max_attempts}:: Failed to get service {service_name}. Error: {e}")
+            print(f"[K8S] Attempt {attempt}/{max_attempts}:: Failed to get service {service_name}. Error: {e}")
         time.sleep(sleep_time)
-    print(f"Failed to get LoadBalancer IP for service {service_name} after {max_attempts} attempts.")
+    print(f"[K8S] Failed to get LoadBalancer IP for service {service_name} after {max_attempts} attempts.")
     raise SystemExit(1)
 
 
@@ -121,7 +121,7 @@ def render_manifest_from_template(template_file, output_path, apps_string):
 
     apps = apps_string.split(",")
     for app in apps:
-        print(f"Rendering template for {app}")
+        print(f"[K8S] Rendering template for {app}")
         app_name, app_port, ip_address = app.split(":")
         output_file = os.path.join(output_path, f"nginx-{app_name}.yaml")
         replace_values(template_file, output_file, app_name, app_port, ip_address)
@@ -153,10 +153,10 @@ def wait_for_kubernetes_api(k8s_api):
         try:
             response = requests.get(k8s_api)
             if response.status_code == 200:
-                print("Kubernetes API server is available.")
+                print("[K8S] Kubernetes API server is available.")
                 break
         except requests.RequestException:
-            print("Waiting for the Kubernetes API server to become available...")
+            print("[K8S] Waiting for the Kubernetes API server to become available...")
             time.sleep(2)
 
 
@@ -169,7 +169,7 @@ def create_k8s_secret(secret_name, secret_data, namespace="default"):
     :param namespace: The namespace for the Kubernetes secret. Default is 'default'.
     :raises SystemExit: If the secret could not be created.
     """
-    print(f"Creating secret '{secret_name}'")
+    print(f"[K8S] Creating secret '{secret_name}'")
 
     v1 = client.CoreV1Api()
     secret = client.V1Secret(
@@ -180,5 +180,5 @@ def create_k8s_secret(secret_name, secret_data, namespace="default"):
         v1.create_namespaced_secret(namespace=namespace, body=secret)
     except client.ApiException as e:
         if e.status != 409:
-            print(f"Exception when creating secret: {e}")
+            print(f"[K8S] Exception when creating secret: {e}")
             raise SystemExit(1)
