@@ -5,7 +5,7 @@ Module used by the Wiz Instruqt Labs
 
 import setuptools
 
-PACKAGE_VERSION = "0.2.0"
+PACKAGE_VERSION = "0.3.0"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

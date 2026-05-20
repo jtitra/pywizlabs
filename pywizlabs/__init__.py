@@ -14,7 +14,7 @@
 
 __project__ = "pywizlabs"
 # The version is auto-updated. Please do not edit.
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from . import wiz
 from . import keycloak
