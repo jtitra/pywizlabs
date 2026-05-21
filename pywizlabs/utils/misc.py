@@ -141,7 +141,7 @@ def generate_credentials_html(credentials):
     :return: Rendered HTML content as a string
     """
     #template_url = f"https://raw.githubusercontent.com/{WORKSHOP_REPO}/main/assets/misc/credential_tab_template.html"
-    template_url = "https://raw.githubusercontent.com/harness-community/field-workshops/refs/heads/harness-se/assets/misc/credential_tab_template.html"
+    template_url = "https://raw.githubusercontent.com/jtitra/pywizlabs/refs/heads/main/assets/misc/credential_tab_template.html"
     token = _github_token_from_netrc()
     headers = {"Authorization": f"token {token}"} if token else {}
     try:
