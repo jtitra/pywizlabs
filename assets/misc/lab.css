@@ -2,9 +2,38 @@
 
 /* Light theme for the lab guide pane */
 div[class*="_AccordionContent_"] {
+    /* Wiz lab system */
     --lab-surface-primary: 255 255 255;   /* #FFFFFF — page bg     */
     --lab-text-primary: 37 36 47;          /* #25242F — body text   */
     --lab-background: 244 248 255;        /* #F4F8FF — wiz-light-blue */
+
+    /* Tailwind Typography — flip prose body + headings to light theme.
+       --tw-prose-pre-bg / --tw-prose-pre-code are intentionally NOT overridden
+       so code blocks keep their dark surface + VS Code token colors. */
+    --tw-prose-body: #25242F;
+    --tw-prose-headings: #01123F;
+    --tw-prose-bold: #01123F;
+    --tw-prose-links: #0254EC;
+    --tw-prose-code: #01123F;
+    --tw-prose-counters: #717783;
+    --tw-prose-bullets: #717783;
+    --tw-prose-hr: #E0E7F1;
+    --tw-prose-quotes: #25242F;
+    --tw-prose-quote-borders: #E0E7F1;
+    --tw-prose-captions: #717783;
+}
+
+/* Replace near-invisible white-10% borders around code blocks */
+div[class*="_AccordionContent_"] .border-white\/10 {
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Give inline <code> a visible chip background */
+div[class*="_AccordionContent_"] :not(pre) > code {
+    background-color: #F4F8FF;
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    color: #01123F;
 }
 
 h2.wiz-blue {
