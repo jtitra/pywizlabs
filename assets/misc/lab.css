@@ -38,6 +38,15 @@ div[class*="_AccordionContent_"] :not(pre) > code {
     color: #01123F;
 }
 
+/* Wiz pink primary action buttons (Next, Check) */
+:root {
+    --lab-action-primary: 255 191 214;  /* #FFBFD6 — wiz frosting-pink */
+}
+
+button.bg-lab-action-primary {
+    color: #25242F;  /* dark text needed for contrast on the pastel pink */
+}
+
 h2.wiz-blue {
     color: #0254ec
 }
