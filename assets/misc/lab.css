@@ -1,5 +1,16 @@
 @import url(https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap);
 
+h2.wiz-blue {
+    color: #0254ec
+}
+
+hr.wiz-blue {
+    background-color: #0254ec;
+    color: #0254ec;
+    height: 2px;
+    margin-bottom: -10px
+}
+
 aside {
     border-left: 4px solid #0254ec;
     padding-left: 12px;
