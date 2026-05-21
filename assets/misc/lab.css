@@ -51,7 +51,9 @@ hr.wiz-blue {
 
 aside {
     border-left: 4px solid #0254ec;
-    background-color: #B8C3D6;
+    background-color: #e7eaee;
+    padding: 8px 12px;
+    border-radius: 4px;
     padding-left: 12px;
     font-weight: 300;
     color: #25242F;
@@ -161,9 +163,6 @@ aside.time::before {
 
 aside.validations {
     border-color: #01123f;
-    background-color: #FFE8FC;
-    padding: 8px 12px;
-    border-radius: 4px;
 }
 
 aside.validations strong {
