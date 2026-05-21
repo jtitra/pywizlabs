@@ -35,7 +35,14 @@ div[class*="_AccordionContent_"] :not(pre) > code {
     background-color: #F4F8FF;
     padding: 0.1em 0.35em;
     border-radius: 4px;
-    color: #01123F;
+}
+
+/* Convert Instruqt's "success" (green) tab-link buttons to Wiz blue.
+   Source in markdown is [button variant="success"](tab-N) — Instruqt
+   compiles that to <a class="... bg-success">. Scoped to the lab guide
+   so any non-link bg-success use elsewhere stays green. */
+div[class*="_AccordionContent_"] a.bg-success {
+    background-color: #0254ec;
 }
 
 /* Wiz pink primary action buttons (Next, Check)
