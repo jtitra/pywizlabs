@@ -1,5 +1,12 @@
 @import url(https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap);
 
+/* Light theme for the lab guide pane */
+div[class*="_AccordionContent_"] {
+    --lab-surface-primary: 255 255 255;   /* #FFFFFF — page bg     */
+    --lab-text-primary: 37 36 47;          /* #25242F — body text   */
+    --lab-background: 244 248 255;        /* #F4F8FF — wiz-light-blue */
+}
+
 h2.wiz-blue {
     color: #0254ec
 }
@@ -121,7 +128,10 @@ aside.time::before {
 }
 
 aside.validations {
-    border-color: #01123f
+    border-color: #01123f;
+    background-color: #FFE8FC;
+    padding: 8px 12px;
+    border-radius: 4px;
 }
 
 aside.validations strong {
