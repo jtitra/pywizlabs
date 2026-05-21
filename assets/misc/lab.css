@@ -38,9 +38,12 @@ div[class*="_AccordionContent_"] :not(pre) > code {
     color: #01123F;
 }
 
-/* Wiz pink primary action buttons (Next, Check) */
-:root {
-    --lab-action-primary: 255 191 214;  /* #FFBFD6 — wiz frosting-pink */
+/* Wiz pink primary action buttons (Next, Check)
+   --lab-action-primary is declared on <body> (likely inline by Instruqt's
+   theme JS), so we have to declare on body too AND use !important to beat
+   the inline value. :root won't work because body sits closer in the tree. */
+body {
+    --lab-action-primary: 255 191 214 !important;  /* #FFBFD6 — wiz frosting-pink */
 }
 
 button.bg-lab-action-primary {
