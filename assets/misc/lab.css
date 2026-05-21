@@ -62,11 +62,10 @@ hr.wiz-blue {
 }
 
 aside {
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-left: 4px solid #0254ec;
-    background-color: #f6f9fe;
     padding: 8px 12px;
-    border-radius: 4px;
-    padding-left: 12px;
+    border-radius: 8px;
     font-weight: 300;
     color: #25242F;
     text-indent: -2px;
@@ -89,7 +88,7 @@ aside::before {
 }
 
 aside.tip {
-    border-color: #0254ec
+    border-left-color: #0254ec
 }
 
 aside.tip strong {
@@ -106,7 +105,7 @@ aside.tip::before {
 }
 
 aside.warning {
-    border-color: #c56ba4
+    border-left-color: #c56ba4
 }
 
 aside.warning strong {
@@ -123,7 +122,7 @@ aside.warning::before {
 }
 
 aside.note {
-    border-color: #6197ff
+    border-left-color: #6197ff
 }
 
 aside.note strong {
@@ -140,7 +139,7 @@ aside.note::before {
 }
 
 aside.important {
-    border-color: #137af4
+    border-left-color: #137af4
 }
 
 aside.important strong {
@@ -157,7 +156,7 @@ aside.important::before {
 }
 
 aside.time {
-    border-color: #ff9bbe
+    border-left-color: #ff9bbe
 }
 
 aside.time strong {
@@ -174,7 +173,7 @@ aside.time::before {
 }
 
 aside.validations {
-    border-color: #01123f;
+    border-left-color: #01123f;
 }
 
 aside.validations strong {
@@ -191,7 +190,7 @@ aside.validations::before {
 }
 
 aside.info {
-    border-color: #6197ff
+    border-left-color: #6197ff
 }
 
 aside.info strong {
@@ -208,7 +207,7 @@ aside.info::before {
 }
 
 aside.congrats {
-    border-color: #0254ec
+    border-left-color: #0254ec
 }
 
 aside.congrats strong {
@@ -225,7 +224,7 @@ aside.congrats::before {
 }
 
 aside.continue {
-    border-color: #6197ff
+    border-left-color: #6197ff
 }
 
 aside.continue strong {
@@ -242,7 +241,7 @@ aside.continue::before {
 }
 
 aside.stop {
-    border-color: #c56ba4
+    border-left-color: #c56ba4
 }
 
 aside.stop strong {
@@ -259,7 +258,7 @@ aside.stop::before {
 }
 
 aside.mika {
-    border-color: #FFBFFF
+    border-left-color: #FFBFFF
 }
 
 aside.mika strong {
