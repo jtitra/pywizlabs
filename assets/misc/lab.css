@@ -2,14 +2,16 @@
 
 /* Light theme for the lab guide pane */
 div[class*="_AccordionContent_"] {
-    /* Wiz lab system */
     --lab-surface-primary: 255 255 255;   /* #FFFFFF — page bg     */
     --lab-text-primary: 37 36 47;          /* #25242F — body text   */
     --lab-background: 244 248 255;        /* #F4F8FF — wiz-light-blue */
+}
 
-    /* Tailwind Typography — flip prose body + headings to light theme.
-       --tw-prose-pre-bg / --tw-prose-pre-code are intentionally NOT overridden
-       so code blocks keep their dark surface + VS Code token colors. */
+/* Tailwind Typography — variables must be set on the .prose element itself
+   to outrank prose-lab's dark-theme defaults (they're set on the same node).
+   --tw-prose-pre-bg / --tw-prose-pre-code intentionally untouched so code
+   blocks keep their dark surface + VS Code token colors. */
+div[class*="_AccordionContent_"] :is(.prose, .prose-lab, .prose-lab-compact) {
     --tw-prose-body: #25242F;
     --tw-prose-headings: #01123F;
     --tw-prose-bold: #01123F;
