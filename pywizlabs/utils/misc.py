@@ -32,7 +32,7 @@ from google.cloud import storage
 #   None
 
 #### GLOBAL VARIABLES ####
-WORKSHOP_REPO = "harness-community/field-workshops"
+WORKSHOP_REPO = "wiz-training/field-workshops"
 
 
 def setup_vs_code(service_port, code_server_directory):
@@ -62,12 +62,12 @@ def setup_vs_code(service_port, code_server_directory):
 
     # Setup VS Code
     os.makedirs("/root/.local/share/code-server/User/", exist_ok=True)
-    settings_url = f"https://raw.githubusercontent.com/{WORKSHOP_REPO}/main/assets/misc/vs_code/settings.json"
+    settings_url = f"https://raw.githubusercontent.com/{WORKSHOP_REPO}/main/misc/vs_code/settings.json"
     settings_response = requests.get(settings_url)
     with open("/root/.local/share/code-server/User/settings.json", "wb") as f:
         f.write(settings_response.content)
 
-    service_url = f"https://raw.githubusercontent.com/{WORKSHOP_REPO}/main/assets/misc/vs_code/code-server.service"
+    service_url = f"https://raw.githubusercontent.com/{WORKSHOP_REPO}/main/misc/vs_code/code-server.service"
     service_response = requests.get(service_url)
     with open("/etc/systemd/system/code-server.service", "wb") as f:
         f.write(service_response.content)
