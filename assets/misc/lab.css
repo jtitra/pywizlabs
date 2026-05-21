@@ -51,9 +51,10 @@ hr.wiz-blue {
 
 aside {
     border-left: 4px solid #0254ec;
+    background-color: #B8C3D6;
     padding-left: 12px;
     font-weight: 300;
-    color: #B8C3D6;
+    color: #25242F;
     text-indent: -2px;
     align-items: center;
     margin-top: 6px;
