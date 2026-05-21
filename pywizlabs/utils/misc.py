@@ -16,6 +16,7 @@
 import os
 import subprocess
 import json
+import netrc
 import random
 import hashlib
 import string
@@ -33,6 +34,25 @@ from google.cloud import storage
 
 #### GLOBAL VARIABLES ####
 WORKSHOP_REPO = "wiz-training/field-workshops"
+
+
+def _github_token_from_netrc():
+    """
+    Look up a GitHub PAT from ~/.netrc.
+
+    raw.githubusercontent.com is a separate hostname from github.com, so
+    requests' built-in netrc support won't reuse the github.com credentials
+    when hitting raw URLs. We pull the token manually and pass it via the
+    Authorization header so private-repo raw fetches work.
+
+    :return: The token string from the netrc password field, or None if
+        no entry is configured / the file is missing.
+    """
+    try:
+        auth = netrc.netrc().authenticators("github.com")
+    except (FileNotFoundError, netrc.NetrcParseError):
+        return None
+    return auth[2] if auth else None  # netrc tuple: (login, account, password)
 
 
 def setup_vs_code(service_port, code_server_directory):
@@ -62,13 +82,20 @@ def setup_vs_code(service_port, code_server_directory):
 
     # Setup VS Code
     os.makedirs("/root/.local/share/code-server/User/", exist_ok=True)
+
+    # Auth header so the raw-content fetches work when WORKSHOP_REPO is private.
+    token = _github_token_from_netrc()
+    headers = {"Authorization": f"token {token}"} if token else {}
+
     settings_url = f"https://raw.githubusercontent.com/{WORKSHOP_REPO}/main/misc/vs_code/settings.json"
-    settings_response = requests.get(settings_url)
+    settings_response = requests.get(settings_url, headers=headers)
+    settings_response.raise_for_status()
     with open("/root/.local/share/code-server/User/settings.json", "wb") as f:
         f.write(settings_response.content)
 
     service_url = f"https://raw.githubusercontent.com/{WORKSHOP_REPO}/main/misc/vs_code/code-server.service"
-    service_response = requests.get(service_url)
+    service_response = requests.get(service_url, headers=headers)
+    service_response.raise_for_status()
     with open("/etc/systemd/system/code-server.service", "wb") as f:
         f.write(service_response.content)
 
@@ -113,10 +140,13 @@ def generate_credentials_html(credentials):
     :param credentials: List of credentials to populate the template
     :return: Rendered HTML content as a string
     """
-    template_url = f"https://raw.githubusercontent.com/{WORKSHOP_REPO}/main/assets/misc/credential_tab_template.html"
+    #template_url = f"https://raw.githubusercontent.com/{WORKSHOP_REPO}/main/assets/misc/credential_tab_template.html"
+    template_url = "https://raw.githubusercontent.com/harness-community/field-workshops/refs/heads/harness-se/assets/misc/credential_tab_template.html"
+    token = _github_token_from_netrc()
+    headers = {"Authorization": f"token {token}"} if token else {}
     try:
         # Fetch the HTML template from the URL
-        response = requests.get(template_url)
+        response = requests.get(template_url, headers=headers)
         response.raise_for_status()
         html_template = response.text
         
@@ -245,8 +275,10 @@ def render_template_from_url(context, template_path):
     :return: The rendered content as a string, or None if an error occurs.
     """
     template_url = f"https://raw.githubusercontent.com/{WORKSHOP_REPO}/main/{template_path}"
+    token = _github_token_from_netrc()
+    headers = {"Authorization": f"token {token}"} if token else {}
     try:
-        response = requests.get(template_url)
+        response = requests.get(template_url, headers=headers)
         response.raise_for_status()
         template_content = response.text
         template = Template(template_content)
@@ -268,8 +300,10 @@ def fetch_template_from_url(template_path, output_file):
     :param output_file: A file to output the template to.
     """
     template_url = f"https://raw.githubusercontent.com/{WORKSHOP_REPO}/main/{template_path}"
+    token = _github_token_from_netrc()
+    headers = {"Authorization": f"token {token}"} if token else {}
     try:
-        response = requests.get(template_url)
+        response = requests.get(template_url, headers=headers)
         response.raise_for_status()
         template_content = response.text
         with open(output_file, 'w') as file:
