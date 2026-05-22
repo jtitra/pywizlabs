@@ -58,6 +58,13 @@ button.bg-lab-action-primary {
     color: #25242F;  /* dark text needed for contrast on the purplish-pink */
 }
 
+/* The selected lab in the sidebar uses bg-lab-action-primary too. Its
+   subtitle <p> has its own `text-lab-secondary` class which overrides
+   inheritance and stays washed out on pink — darken it explicitly. */
+button.bg-lab-action-primary .text-lab-secondary {
+    color: #434343;
+}
+
 h2.wiz-blue {
     color: #0254ec
 }
