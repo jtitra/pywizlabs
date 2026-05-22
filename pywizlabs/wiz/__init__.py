@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .platform import (build_wiz_api_url, delete_wiz_user, get_user_creations, get_wiz_api_token, process_deletions, verify_wiz_login)
+from .platform import (build_wiz_api_url, delete_connector, delete_wiz_user, get_user_creations, get_wiz_api_token, process_deletions, verify_wiz_login)
