@@ -255,14 +255,79 @@ def delete_wiz_user(dc: str, access_token: str, user_email: str) -> bool:
         return False
 
 
+# All `Create*` action names Wiz emits today. Canonical list from the API
+# reference (docs.wiz.io > Get Audit Logs > available actions). Used as the
+# Python-side match set in `get_user_creations` because the server-side
+# `action` filter in `AuditLogEntryFilters` is a single string, not an enum
+# or array — we can't pre-filter all 47 in one shot. Update this if Wiz adds
+# new create actions; until then, anything not in this set is ignored even
+# if it shares the `Create…` prefix.
+WIZ_CREATE_ACTIONS = frozenset({
+    "CreateActionTemplate",
+    "CreateApplicationServiceDiscoveryRule",
+    "CreateAutomationRule",
+    "CreateCICDScanPolicy",
+    "CreateCloudConfigurationFindingNote",
+    "CreateCloudConfigurationRule",
+    "CreateCloudConfigurationRules",
+    "CreateCloudEventRule",
+    "CreateComputeGroupTagsSet",
+    "CreateConnector",
+    "CreateControl",
+    "CreateCustomIPRange",
+    "CreateDashboard",
+    "CreateDashboardWidget",
+    "CreateDataClassifier",
+    "CreateDigitalTrustCustomDomain",
+    "CreateFileIntegrityMonitoringExclusion",
+    "CreateHostConfigurationAssessmentNote",
+    "CreateHostConfigurationRule",
+    "CreateIgnoreRule",
+    "CreateImageIntegrityValidator",
+    "CreateIntegration",
+    "CreateIssueNote",
+    "CreateMalwareExclusion",
+    "CreateMonitoredMetric",
+    "CreateOutpost",
+    "CreateOutpostCluster",
+    "CreatePolicyPackage",
+    "CreatePortalView",
+    "CreateProject",
+    "CreateRemediationAndResponseDeployment",
+    "CreateRemediationPullRequest",
+    "CreateReport",
+    "CreateRuntimeResponsePolicy",
+    "CreateSAMLIdentityProvider",
+    "CreateSAMLUser",
+    "CreateSavedCloudEventFilter",
+    "CreateSavedGraphQuery",
+    "CreateScannerAPIRateLimit",
+    "CreateSecurityFramework",
+    "CreateServiceAccount",
+    "CreateSupportTicket",
+    "CreateTestNode",
+    "CreateUser",
+    "CreateUserRole",
+    "CreateVulnerabilityFindingNote",
+})
+
+
 def get_user_creations(dc: str, access_token: str, user_email: str, hours_ago: int = 24) -> list:
     """
-    Queries the Wiz Audit Logs for successful CREATE actions performed by the given
-    user within a timeframe. Wiz's ``AuditLogEntry`` has no structured ``resource``
-    field — the resource identifiers live inside ``actionParameters`` as a JSON blob
-    whose shape varies per action. This function returns the raw audit entries so
-    callers can either persist them for manual review or parse ``actionParameters``
-    per action type.
+    Queries the Wiz Audit Logs for successful ``Create*`` actions performed by
+    the given user within a timeframe. Wiz's ``AuditLogEntry`` has no structured
+    ``resource`` field — the resource identifiers live inside ``actionParameters``
+    as a JSON blob whose shape varies per action. This function returns the raw
+    audit entries so callers can either persist them for manual review or parse
+    ``actionParameters`` per action type.
+
+    Filtering strategy:
+      - Server-side via ``AuditLogEntryFilters`` —
+        ``timestamp.after`` (lookback bound), ``status: [SUCCESS]``,
+        ``actionType: [MUTATION]`` — keeps the Wiz-side result small.
+      - Python-side — performer email match (no server filter accepts email
+        directly; the ``user`` filter requires UUIDs, which would cost an
+        extra lookup) plus exact-match against ``WIZ_CREATE_ACTIONS``.
 
     Args:
         dc (str): The Wiz datacenter identifier (e.g., "us100", "us17", "eu1").
@@ -286,13 +351,22 @@ def get_user_creations(dc: str, access_token: str, user_email: str, hours_ago: i
     # Calculate the timestamp for the filter
     time_threshold = (datetime.now(timezone.utc) - timedelta(hours=hours_ago)).isoformat()
 
-    # GraphQL query to fetch Audit Logs.
-    # Note: ``performer`` is a SystemPrincipalSnapshot interface; only ``id`` and
-    # ``name`` are common to all implementations. Wiz typically stores the user's
-    # email as ``name``, so we match on that for the defensive per-user filter.
+    # Server-side filters narrow the result set before Python touches it:
+    #   - timestamp.after      drops everything outside the lookback window
+    #   - status: [SUCCESS]    drops failed / denied attempts
+    #   - actionType: [MUTATION] drops the read-side audit volume
+    # The `action` field in `AuditLogEntryFilters` is a SINGLE string (not
+    # an enum or array), so we can't enumerate all 47 `Create*` action names
+    # server-side. WIZ_CREATE_ACTIONS handles that match in Python below.
+    # ISO 8601 `Z` form (no microseconds, no offset) is what Wiz's
+    # `timestamp.after` expects per the docs: yyyy-MM-dd'T'HH:mm:ss'Z'.
+    # `performer` is a SystemPrincipalSnapshot interface — only `id` and
+    # `name` are common to all impls; Wiz stores the user's email in `name`.
+    time_threshold_iso = (datetime.now(timezone.utc) - timedelta(hours=hours_ago)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
     query_audit_logs = """
-    query GetUserAuditLogs($search: String, $first: Int) {
-      auditLogEntries(filterBy: { search: $search }, first: $first) {
+    query GetUserAuditLogs($first: Int, $filterBy: AuditLogEntryFilters) {
+      auditLogEntries(first: $first, filterBy: $filterBy) {
         nodes {
           id
           action
@@ -310,8 +384,12 @@ def get_user_creations(dc: str, access_token: str, user_email: str, hours_ago: i
     """
 
     variables = {
-        "search": user_email,
-        "first": 500
+        "first": 500,
+        "filterBy": {
+            "timestamp":  {"after": time_threshold_iso},
+            "status":     ["SUCCESS"],
+            "actionType": ["MUTATION"],
+        },
     }
 
     created_resources = []
@@ -334,18 +412,16 @@ def get_user_creations(dc: str, access_token: str, user_email: str, hours_ago: i
         logs = entries_block.get("nodes", [])
 
         for log in logs:
-            # Filter for successful creation events by the specific user after our time threshold.
+            # Server-side filters already enforced status=SUCCESS, actionType=MUTATION,
+            # and timestamp >= threshold. We only need to narrow by user (no
+            # server filter for email-based matching without an extra user-ID
+            # lookup) and to the known set of `Create*` action names.
             performer_name = log.get("performer", {}).get("name", "").lower()
-            action = log.get("action", "").upper()
-            status = log.get("status", "").upper()
-            timestamp = log.get("timestamp", "")
+            action = log.get("action", "")
 
-            if (performer_name == user_email.lower() and
-                "CREATE" in action and
-                status == "SUCCESS" and
-                timestamp >= time_threshold):
-
-                print(f"[WIZ] [{timestamp}] {user_email} performed {log.get('action')} (entry {log.get('id')})")
+            if performer_name == user_email.lower() and action in WIZ_CREATE_ACTIONS:
+                timestamp = log.get("timestamp", "")
+                print(f"[WIZ] [{timestamp}] {user_email} performed {action} (entry {log.get('id')})")
                 created_resources.append(log)
 
         if not created_resources:
